@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import MoodSelector, { Mood } from "./MoodSelector";
 import AISuggestion from "./AISuggestion";
 
@@ -26,7 +26,6 @@ export default function PaperEditor({
   initialMood = null,
   prompts = [],
   onSave,
-  onPromptsViewed,
   isSaving = false,
 }: PaperEditorProps) {
   const [title, setTitle] = useState(initialTitle);
@@ -37,7 +36,6 @@ export default function PaperEditor({
   const [loadingSuggestion, setLoadingSuggestion] = useState(false);
   const [lastParagraphCount, setLastParagraphCount] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -46,27 +44,6 @@ export default function PaperEditor({
       textareaRef.current.style.height = `${Math.max(400, textareaRef.current.scrollHeight)}px`;
     }
   }, [content]);
-
-  // Auto-save functionality
-  const triggerAutoSave = useCallback(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-    saveTimeoutRef.current = setTimeout(() => {
-      if (content.trim()) {
-        onSave({ title, content, mood });
-      }
-    }, 2000);
-  }, [title, content, mood, onSave]);
-
-  useEffect(() => {
-    triggerAutoSave();
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-      }
-    };
-  }, [title, content, mood, triggerAutoSave]);
 
   // Detect new paragraphs and fetch suggestions
   useEffect(() => {
@@ -119,12 +96,17 @@ export default function PaperEditor({
 
   const handleDismissPrompts = () => {
     setShowPrompts(false);
-    onPromptsViewed?.();
   };
 
   const handlePromptClick = (prompt: string) => {
     setContent(prev => (prev ? `${prev}\n\n${prompt}` : prompt));
     textareaRef.current?.focus();
+  };
+
+  const handleSave = () => {
+    if (content.trim()) {
+      onSave({ title, content, mood });
+    }
   };
 
   const currentDate = new Date().toLocaleDateString("en-US", {
@@ -223,7 +205,7 @@ export default function PaperEditor({
               </span>
             )}
             <button
-              onClick={() => onSave({ title, content, mood })}
+              onClick={handleSave}
               disabled={isSaving || !content.trim()}
               className="px-4 py-2 text-xs font-light tracking-wide bg-black text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
@@ -235,4 +217,3 @@ export default function PaperEditor({
     </div>
   );
 }
-

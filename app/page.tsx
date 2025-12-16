@@ -19,7 +19,8 @@ export default function Home() {
           </h1>
           
           <p className="text-lg font-light text-gray-500 mb-12 max-w-md mx-auto leading-relaxed">
-            Think Better.
+            A mindful journaling space with AI-powered prompts to help you reflect, 
+            process, and grow — one entry at a time.
           </p>
 
           {user ? (

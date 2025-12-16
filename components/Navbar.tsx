@@ -28,6 +28,12 @@ export default function Navbar() {
               >
                 entries
               </Link>
+              <Link
+                href="/chat"
+                className="text-sm font-light text-gray-600 hover:text-black transition-colors"
+              >
+                chat
+              </Link>
               <UserButton />
             </>
           ) : (
@@ -43,4 +49,3 @@ export default function Navbar() {
     </nav>
   );
 }
-

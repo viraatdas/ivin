@@ -29,10 +29,6 @@ export default function EntryCard({ entry, onDelete }: EntryCardProps) {
     minute: "2-digit",
   });
 
-  // Get preview of content (first 150 chars)
-  const preview = entry.content.slice(0, 150).trim();
-  const hasMore = entry.content.length > 150;
-
   return (
     <Link
       href={`/entry/${entry.id}`}
@@ -73,10 +69,20 @@ export default function EntryCard({ entry, onDelete }: EntryCardProps) {
           </h3>
         )}
 
-        <p className="text-sm font-light text-gray-600 leading-relaxed">
-          {preview}
-          {hasMore && <span className="text-gray-400">...</span>}
-        </p>
+        {/* Summary - AI generated topic */}
+        {entry.summary && (
+          <p className="text-sm font-light text-gray-800 mb-3 italic">
+            {entry.summary}
+          </p>
+        )}
+
+        {/* Content preview - only show if no summary */}
+        {!entry.summary && (
+          <p className="text-sm font-light text-gray-500 leading-relaxed">
+            {entry.content.slice(0, 120).trim()}
+            {entry.content.length > 120 && <span className="text-gray-400">...</span>}
+          </p>
+        )}
 
         <div className="mt-4 text-xs font-light text-gray-400">
           {entry.content.split(/\s+/).filter(Boolean).length} words
@@ -85,4 +91,3 @@ export default function EntryCard({ entry, onDelete }: EntryCardProps) {
     </Link>
   );
 }
-

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/lib/stack";
 import { createServerSupabaseClient } from "@/lib/supabase";
+import { generateEntrySummary } from "@/lib/openai";
 
 // GET /api/entries - Get all entries for the current user
 export async function GET(request: NextRequest) {
@@ -51,6 +52,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });
     }
 
+    // Generate summary for the entry
+    let summary = null;
+    try {
+      summary = await generateEntrySummary(content);
+    } catch (e) {
+      console.error("Failed to generate summary:", e);
+    }
+
     const supabase = createServerSupabaseClient();
 
     const { data: entry, error } = await supabase
@@ -60,6 +69,7 @@ export async function POST(request: NextRequest) {
         title: title || null,
         content,
         mood: mood || null,
+        summary,
       })
       .select()
       .single();
@@ -97,7 +107,7 @@ export async function PUT(request: NextRequest) {
     // First verify the entry belongs to the user
     const { data: existingEntry, error: fetchError } = await supabase
       .from("journal_entries")
-      .select("id")
+      .select("id, content")
       .eq("id", id)
       .eq("user_id", user.id)
       .single();
@@ -106,12 +116,23 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: "Entry not found" }, { status: 404 });
     }
 
+    // Regenerate summary if content changed
+    let summary = undefined;
+    if (content && content !== existingEntry.content) {
+      try {
+        summary = await generateEntrySummary(content);
+      } catch (e) {
+        console.error("Failed to generate summary:", e);
+      }
+    }
+
     const { data: entry, error } = await supabase
       .from("journal_entries")
       .update({
         title: title || null,
         content,
         mood: mood || null,
+        ...(summary !== undefined && { summary }),
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -166,4 +187,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
-

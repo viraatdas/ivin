@@ -17,7 +17,7 @@ export type JournalEntry = {
   title: string | null;
   content: string;
   mood: string | null;
+  summary: string | null;
   created_at: string;
   updated_at: string;
 };
-

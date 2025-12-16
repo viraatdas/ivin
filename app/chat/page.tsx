@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@stackframe/stack";
 import { useRouter, useSearchParams } from "next/navigation";
+import ReactMarkdown from "react-markdown";
 import Navbar from "@/components/Navbar";
 import { ChatMessage } from "@/lib/supabase";
 
@@ -273,9 +274,15 @@ export default function ChatPage() {
                           : "bg-gray-100 text-gray-800"
                       }`}
                     >
-                      <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">
-                        {message.content}
-                      </p>
+                      {message.role === "user" ? (
+                        <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">
+                          {message.content}
+                        </p>
+                      ) : (
+                        <div className="text-sm font-light leading-relaxed prose prose-sm prose-gray max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:font-medium prose-headings:mt-3 prose-headings:mb-1 prose-strong:font-medium prose-code:bg-gray-200 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:before:content-none prose-code:after:content-none">
+                          <ReactMarkdown>{message.content}</ReactMarkdown>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -284,10 +291,10 @@ export default function ChatPage() {
                 {streamingContent && (
                   <div className="flex justify-start">
                     <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-gray-100 text-gray-800">
-                      <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">
-                        {streamingContent}
+                      <div className="text-sm font-light leading-relaxed prose prose-sm prose-gray max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:font-medium prose-headings:mt-3 prose-headings:mb-1 prose-strong:font-medium prose-code:bg-gray-200 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-xs prose-code:before:content-none prose-code:after:content-none">
+                        <ReactMarkdown>{streamingContent}</ReactMarkdown>
                         <span className="inline-block w-1 h-4 bg-gray-400 ml-0.5 animate-pulse" />
-                      </p>
+                      </div>
                     </div>
                   </div>
                 )}

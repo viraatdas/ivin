@@ -12,10 +12,12 @@
     "@google/generative-ai": "^0.24.1",
     "@stackframe/stack": "^2.8.56",
     "@supabase/supabase-js": "^2.87.1",
+    "@tailwindcss/typography": "^0.5.19",
     "next": "16.0.10",
     "openai": "^6.10.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
+    "react-markdown": "^10.1.0",
     "server-only": "^0.0.1"
   },
   "devDependencies": {

@@ -11,6 +11,11 @@ export const createServerSupabaseClient = () => {
   return createClient(supabaseUrl, supabaseServiceKey);
 };
 
+export type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export type JournalEntry = {
   id: string;
   user_id: string;
@@ -18,6 +23,8 @@ export type JournalEntry = {
   content: string;
   mood: string | null;
   summary: string | null;
+  entry_type: "regular" | "chat";
+  chat_history: ChatMessage[] | null;
   created_at: string;
   updated_at: string;
 };

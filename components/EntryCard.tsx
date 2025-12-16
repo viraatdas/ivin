@@ -45,6 +45,11 @@ export default function EntryCard({ entry, onDelete }: EntryCardProps) {
             <time className="text-xs font-light text-gray-400">
               {formattedDate} · {formattedTime}
             </time>
+            {entry.entry_type === "chat" && (
+              <span className="px-2 py-0.5 rounded-full text-xs font-light text-white bg-gray-800">
+                💬 chat
+              </span>
+            )}
             {entry.mood && (
               <span
                 className={`px-2 py-0.5 rounded-full text-xs font-light text-gray-700 ${moodColors[entry.mood] || "bg-gray-200"}`}

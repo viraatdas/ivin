@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import PaperEditor from "@/components/PaperEditor";
 import { Mood } from "@/components/MoodSelector";
-import { JournalEntry } from "@/lib/supabase";
+import { JournalEntry, ChatMessage } from "@/lib/supabase";
 
 export default function EntryPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -142,6 +142,94 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
     month: "long",
     day: "numeric",
   });
+
+  // Render chat entry view
+  if (entry.entry_type === "chat" && entry.chat_history) {
+    return (
+      <>
+        <Navbar />
+        <main className="min-h-screen pt-24 pb-12 px-6">
+          <div className="max-w-3xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={() => router.push("/history")}
+                className="text-sm font-light text-gray-500 hover:text-black transition-colors"
+              >
+                ← back to entries
+              </button>
+              
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => router.push(`/chat?resume=${id}`)}
+                  className="px-4 py-2 bg-black text-white text-sm font-light rounded-full hover:bg-gray-800 transition-colors"
+                >
+                  💬 resume chat
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="text-xs font-light text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  delete
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-2xl font-light tracking-tight">
+                  {entry.title || "Chat Conversation"}
+                </h1>
+                <span className="px-2 py-0.5 rounded-full text-xs font-light text-white bg-gray-800">
+                  💬 chat
+                </span>
+              </div>
+              <p className="text-xs font-light text-gray-400">
+                {entryDate}
+              </p>
+              {entry.summary && (
+                <p className="text-sm font-light text-gray-600 mt-2 italic">
+                  {entry.summary}
+                </p>
+              )}
+            </div>
+
+            {/* Chat messages */}
+            <div className="space-y-4">
+              {(entry.chat_history as ChatMessage[]).map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                      message.role === "user"
+                        ? "bg-black text-white"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">
+                      {message.content}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Resume button at bottom */}
+            <div className="mt-8 text-center">
+              <button
+                onClick={() => router.push(`/chat?resume=${id}`)}
+                className="px-6 py-3 bg-gray-100 text-gray-700 text-sm font-light rounded-full hover:bg-gray-200 transition-colors"
+              >
+                Continue this conversation →
+              </button>
+            </div>
+          </div>
+        </main>
+      </>
+    );
+  }
 
   return (
     <>

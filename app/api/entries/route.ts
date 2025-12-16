@@ -17,6 +17,12 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "50");
     const offset = parseInt(searchParams.get("offset") || "0");
 
+    // Get total count for pagination
+    const { count: totalCount } = await supabase
+      .from("journal_entries")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id);
+
     const { data: entries, error } = await supabase
       .from("journal_entries")
       .select("*")
@@ -29,7 +35,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Failed to fetch entries" }, { status: 500 });
     }
 
-    return NextResponse.json({ entries });
+    return NextResponse.json({ entries, totalCount });
   } catch (error) {
     console.error("Error in GET /api/entries:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -46,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, content, mood } = body;
+    const { title, content, mood, entry_type = "regular", chat_history = null } = body;
 
     if (!content || typeof content !== "string") {
       return NextResponse.json({ error: "Content is required" }, { status: 400 });
@@ -70,6 +76,8 @@ export async function POST(request: NextRequest) {
         content,
         mood: mood || null,
         summary,
+        entry_type,
+        chat_history,
       })
       .select()
       .single();
@@ -96,7 +104,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { id, title, content, mood } = body;
+    const { id, title, content, mood, chat_history } = body;
 
     if (!id) {
       return NextResponse.json({ error: "Entry ID is required" }, { status: 400 });
@@ -133,6 +141,7 @@ export async function PUT(request: NextRequest) {
         content,
         mood: mood || null,
         ...(summary !== undefined && { summary }),
+        ...(chat_history !== undefined && { chat_history }),
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)

@@ -27,13 +27,12 @@ export async function POST(request: NextRequest) {
 
     const supabase = createServerSupabaseClient();
 
-    // Get all entries for context
+    // Get ALL entries for context (no limit - chat needs full history)
     const { data: entries, error } = await supabase
       .from("journal_entries")
       .select("content, created_at, title, mood")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(50);
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching entries:", error);

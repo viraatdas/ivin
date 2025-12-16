@@ -7,12 +7,17 @@ import Navbar from "@/components/Navbar";
 import EntryCard from "@/components/EntryCard";
 import { JournalEntry } from "@/lib/supabase";
 
+const PAGE_SIZE = 50;
+
 export default function HistoryPage() {
   const user = useUser();
   const router = useRouter();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const [hasMore, setHasMore] = useState(true);
 
   // Redirect if not logged in
   useEffect(() => {
@@ -25,10 +30,12 @@ export default function HistoryPage() {
   useEffect(() => {
     const fetchEntries = async () => {
       try {
-        const response = await fetch("/api/entries");
+        const response = await fetch(`/api/entries?limit=${PAGE_SIZE}&offset=0`);
         if (response.ok) {
           const data = await response.json();
           setEntries(data.entries || []);
+          setTotalCount(data.totalCount ?? null);
+          setHasMore((data.entries?.length || 0) >= PAGE_SIZE);
         }
       } catch (error) {
         console.error("Failed to fetch entries:", error);
@@ -41,6 +48,25 @@ export default function HistoryPage() {
       fetchEntries();
     }
   }, [user]);
+
+  const loadMore = async () => {
+    if (isLoadingMore || !hasMore) return;
+    
+    setIsLoadingMore(true);
+    try {
+      const response = await fetch(`/api/entries?limit=${PAGE_SIZE}&offset=${entries.length}`);
+      if (response.ok) {
+        const data = await response.json();
+        const newEntries = data.entries || [];
+        setEntries(prev => [...prev, ...newEntries]);
+        setHasMore(newEntries.length >= PAGE_SIZE);
+      }
+    } catch (error) {
+      console.error("Failed to load more entries:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this entry?")) {
@@ -143,6 +169,30 @@ export default function HistoryPage() {
                   </div>
                 </section>
               ))}
+              
+              {/* Load More Section */}
+              {hasMore && (
+                <div className="text-center pt-8">
+                  <button
+                    onClick={loadMore}
+                    disabled={isLoadingMore}
+                    className="px-6 py-2 border border-gray-300 text-gray-600 text-sm font-light tracking-wide hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    {isLoadingMore ? "loading..." : "load more entries"}
+                  </button>
+                  {totalCount && (
+                    <p className="text-xs text-gray-400 mt-3">
+                      showing {entries.length} of {totalCount} entries
+                    </p>
+                  )}
+                </div>
+              )}
+              
+              {!hasMore && entries.length > PAGE_SIZE && (
+                <p className="text-center text-xs text-gray-400 pt-4">
+                  you&apos;ve reached the beginning ✨
+                </p>
+              )}
             </div>
           )}
         </div>

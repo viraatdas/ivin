@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
 
 export async function generateJournalPrompts(previousEntries: { content: string; created_at: string }[]): Promise<string[]> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
   let prompt: string;
   
@@ -40,7 +40,7 @@ export async function generateParagraphSuggestion(
   currentParagraph: string,
   previousContent: string
 ): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
   const prompt = `You are a gentle, therapeutic journaling companion. When a user finishes writing a paragraph, you provide a single, brief reflection question or gentle prompt to help them dig deeper or continue their thought process. Be warm and supportive, never judgmental. Keep your response to 1-2 sentences maximum.
 
@@ -59,7 +59,7 @@ Provide a single gentle, therapeutic follow-up question or prompt to help them c
 }
 
 export async function generateEntrySummary(content: string): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
   const prompt = `Summarize this journal entry in a single brief sentence (10-15 words max). Focus on the main theme or emotion. Be concise and insightful.
 
@@ -77,7 +77,7 @@ export async function chatWithEntriesStream(
   chatHistory: { role: 'user' | 'assistant'; content: string }[],
   userTimezone: string
 ): Promise<AsyncIterable<string>> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
   const entriesContext = entries
     .map((e) => {

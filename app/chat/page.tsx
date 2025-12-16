@@ -16,6 +16,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Redirect if not logged in
@@ -28,7 +29,7 @@ export default function ChatPage() {
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, streamingContent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,27 +39,57 @@ export default function ChatPage() {
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setIsLoading(true);
+    setStreamingContent("");
 
     try {
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
           chatHistory: messages,
+          userTimezone,
         }),
       });
 
-      if (response.ok) {
+      if (!response.ok) {
+        throw new Error("Failed to get response");
+      }
+
+      // Check if it's a streaming response
+      const contentType = response.headers.get("content-type");
+      
+      if (contentType?.includes("text/plain")) {
+        // Handle streaming response
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+        let fullContent = "";
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const text = decoder.decode(value, { stream: true });
+            fullContent += text;
+            setStreamingContent(fullContent);
+          }
+        }
+
+        // Add the complete message to history
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: fullContent },
+        ]);
+        setStreamingContent("");
+      } else {
+        // Handle non-streaming response (e.g., no entries case)
         const data = await response.json();
         setMessages((prev) => [
           ...prev,
           { role: "assistant", content: data.response },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          { role: "assistant", content: "Sorry, I encountered an error. Please try again." },
         ]);
       }
     } catch (error) {
@@ -67,6 +98,7 @@ export default function ChatPage() {
         ...prev,
         { role: "assistant", content: "Sorry, I encountered an error. Please try again." },
       ]);
+      setStreamingContent("");
     } finally {
       setIsLoading(false);
     }
@@ -104,7 +136,7 @@ export default function ChatPage() {
 
           {/* Chat messages */}
           <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-            {messages.length === 0 ? (
+            {messages.length === 0 && !streamingContent ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center">
                   <p className="text-gray-400 font-light mb-4">
@@ -124,36 +156,51 @@ export default function ChatPage() {
                 </div>
               </div>
             ) : (
-              messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                >
+              <>
+                {messages.map((message, index) => (
                   <div
-                    className={`max-w-[80%] px-4 py-3 rounded-2xl ${
-                      message.role === "user"
-                        ? "bg-black text-white"
-                        : "bg-gray-100 text-gray-800"
-                    }`}
+                    key={index}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">
-                      {message.content}
-                    </p>
+                    <div
+                      className={`max-w-[80%] px-4 py-3 rounded-2xl ${
+                        message.role === "user"
+                          ? "bg-black text-white"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">
+                        {message.content}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
-            
-            {isLoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 px-4 py-3 rounded-2xl">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                ))}
+                
+                {/* Streaming message */}
+                {streamingContent && (
+                  <div className="flex justify-start">
+                    <div className="max-w-[80%] px-4 py-3 rounded-2xl bg-gray-100 text-gray-800">
+                      <p className="text-sm font-light leading-relaxed whitespace-pre-wrap">
+                        {streamingContent}
+                        <span className="inline-block w-1 h-4 bg-gray-400 ml-0.5 animate-pulse" />
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </div>
+                )}
+                
+                {/* Loading indicator (only show if loading but not streaming yet) */}
+                {isLoading && !streamingContent && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 px-4 py-3 rounded-2xl">
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
             
             <div ref={messagesEndRef} />
@@ -182,4 +229,3 @@ export default function ChatPage() {
     </>
   );
 }
-

@@ -109,7 +109,10 @@ export default function PaperEditor({
     }
   };
 
+  // Get current date in user's local timezone
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const currentDate = new Date().toLocaleDateString("en-US", {
+    timeZone: userTimezone,
     weekday: "long",
     year: "numeric",
     month: "long",

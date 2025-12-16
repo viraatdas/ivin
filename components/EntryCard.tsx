@@ -18,13 +18,18 @@ interface EntryCardProps {
 }
 
 export default function EntryCard({ entry, onDelete }: EntryCardProps) {
+  // Use the user's local timezone for display
   const date = new Date(entry.created_at);
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  
   const formattedDate = date.toLocaleDateString("en-US", {
+    timeZone: userTimezone,
     weekday: "short",
     month: "short",
     day: "numeric",
   });
   const formattedTime = date.toLocaleTimeString("en-US", {
+    timeZone: userTimezone,
     hour: "numeric",
     minute: "2-digit",
   });

@@ -78,10 +78,12 @@ export default function HistoryPage() {
     );
   }
 
-  // Group entries by month
+  // Group entries by month using user's local timezone
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const groupedEntries = entries.reduce((groups, entry) => {
     const date = new Date(entry.created_at);
     const monthYear = date.toLocaleDateString("en-US", {
+      timeZone: userTimezone,
       month: "long",
       year: "numeric",
     });

@@ -134,7 +134,9 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
     );
   }
 
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const entryDate = new Date(entry.created_at).toLocaleDateString("en-US", {
+    timeZone: userTimezone,
     weekday: "long",
     year: "numeric",
     month: "long",

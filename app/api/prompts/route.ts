@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { stackServerApp } from "@/lib/stack";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { generateJournalPrompts } from "@/lib/openai";
+import { generateJournalPrompts } from "@/lib/gemini";
 
 // GET /api/prompts - Get AI-generated prompts based on all previous entries
 export async function GET() {
@@ -22,7 +22,7 @@ export async function GET() {
       .order("created_at", { ascending: false })
       .limit(10);
 
-    // Generate prompts using OpenAI with all entries as context
+    // Generate prompts using Gemini with all entries as context
     const prompts = await generateJournalPrompts(entries || []);
 
     return NextResponse.json({ prompts });

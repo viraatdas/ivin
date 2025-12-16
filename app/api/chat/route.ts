@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { stackServerApp } from "@/lib/stack";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { openai } from "@/lib/openai";
+import { chatWithEntriesStream } from "@/lib/gemini";
 
 // POST /api/chat - Chat with journal entries (streaming)
 export async function POST(request: NextRequest) {
@@ -51,65 +51,21 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Format entries with user's timezone
-    const entriesContext = entries
-      .map((e) => {
-        const date = new Date(e.created_at).toLocaleDateString("en-US", {
-          timeZone: userTimezone,
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        });
-        const title = e.title ? ` - "${e.title}"` : '';
-        const mood = e.mood ? ` (feeling ${e.mood})` : '';
-        return `[${date}${title}${mood}]\n${e.content}`;
-      })
-      .join('\n\n---\n\n');
+    // Create streaming response using Gemini
+    const stream = await chatWithEntriesStream(message, entries, chatHistory, userTimezone);
 
-    const systemPrompt = `You are a thoughtful, empathetic AI companion who has access to the user's journal entries. Your role is to:
-- Help them reflect on patterns and themes in their writing
-- Provide supportive insights based on their journal history
-- Answer questions about their past entries
-- Offer gentle, therapeutic guidance
-
-Be warm, understanding, and never judgmental. Reference specific entries when relevant. Keep responses concise but meaningful.
-
-The user is in timezone: ${userTimezone}. All dates mentioned should be relative to their local time.
-
-Here are the user's journal entries for context:
-
-${entriesContext}`;
-
-    const messages: { role: "system" | "user" | "assistant"; content: string }[] = [
-      { role: "system", content: systemPrompt },
-      ...chatHistory.map((m: { role: string; content: string }) => ({ 
-        role: m.role as "user" | "assistant", 
-        content: m.content 
-      })),
-      { role: "user", content: message },
-    ];
-
-    // Create streaming response
-    const stream = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages,
-      temperature: 0.7,
-      max_tokens: 500,
-      stream: true,
-    });
-
-    // Create a readable stream for the response
     const encoder = new TextEncoder();
     const readable = new ReadableStream({
       async start(controller) {
-        for await (const chunk of stream) {
-          const text = chunk.choices[0]?.delta?.content || "";
-          if (text) {
+        try {
+          for await (const text of stream) {
             controller.enqueue(encoder.encode(text));
           }
+          controller.close();
+        } catch (e) {
+          console.error("Stream error:", e);
+          controller.error(e);
         }
-        controller.close();
       },
     });
 

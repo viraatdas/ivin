@@ -72,60 +72,13 @@ export async function GET() {
           {/* Tagline */}
           <div
             style={{
-              fontSize: 28,
+              fontSize: 32,
               fontWeight: 300,
               color: "#6B7280",
               textAlign: "center",
-              maxWidth: "600px",
             }}
           >
-            your thoughts, gently guided
-          </div>
-
-          {/* Features */}
-          <div
-            style={{
-              display: "flex",
-              gap: "32px",
-              marginTop: "40px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: 18,
-                color: "#9CA3AF",
-                fontWeight: 300,
-              }}
-            >
-              <span style={{ color: "#A7C7E7" }}>●</span> AI prompts
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: 18,
-                color: "#9CA3AF",
-                fontWeight: 300,
-              }}
-            >
-              <span style={{ color: "#C1E1C1" }}>●</span> Mood tracking
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                fontSize: 18,
-                color: "#9CA3AF",
-                fontWeight: 300,
-              }}
-            >
-              <span style={{ color: "#DDD5F3" }}>●</span> Chat with entries
-            </div>
+            Think Better.
           </div>
         </div>
       </div>
@@ -136,4 +89,3 @@ export async function GET() {
     }
   );
 }
-

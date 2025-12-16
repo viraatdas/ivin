@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/lib/stack";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { generateEntrySummary } from "@/lib/openai";
+import { generateEntrySummary } from "@/lib/gemini";
 
 // GET /api/entries - Get all entries for the current user
 export async function GET(request: NextRequest) {

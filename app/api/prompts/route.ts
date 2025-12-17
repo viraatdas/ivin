@@ -14,13 +14,13 @@ export async function GET() {
 
     const supabase = createServerSupabaseClient();
 
-    // Get the last 10 entries for context
+    // Get the last 2 entries for specific, personalized prompts
     const { data: entries } = await supabase
       .from("journal_entries")
-      .select("content, created_at")
+      .select("content, created_at, title, mood")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(2);
 
     // Generate prompts using Gemini with all entries as context
     const prompts = await generateJournalPrompts(entries || []);

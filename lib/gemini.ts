@@ -2,27 +2,46 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GEMINI_API_KEY!);
 
-export async function generateJournalPrompts(previousEntries: { content: string; created_at: string }[]): Promise<string[]> {
+export async function generateJournalPrompts(previousEntries: { content: string; created_at: string; title?: string; mood?: string }[]): Promise<string[]> {
   const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
 
   let prompt: string;
   
   if (previousEntries.length > 0) {
     const entriesSummary = previousEntries
-      .slice(0, 5)
-      .map((e, i) => `Entry ${i + 1} (${new Date(e.created_at).toLocaleDateString()}): ${e.content.slice(0, 500)}${e.content.length > 500 ? '...' : ''}`)
-      .join('\n\n');
+      .slice(0, 2)
+      .map((e, i) => {
+        const date = new Date(e.created_at).toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long", 
+          day: "numeric",
+          year: "numeric"
+        });
+        const title = e.title ? `"${e.title}"` : 'Untitled';
+        const mood = e.mood ? ` (mood: ${e.mood})` : '';
+        // Include more content - up to 1500 chars to get real specifics
+        return `Entry ${i + 1}: ${title} - ${date}${mood}\n${e.content.slice(0, 1500)}${e.content.length > 1500 ? '...' : ''}`;
+      })
+      .join('\n\n---\n\n');
     
-    prompt = `You are a thoughtful, therapeutic journaling assistant. Your role is to help users reflect on their day and emotions. Be warm, gentle, and encouraging.
+    prompt = `You are a thoughtful, therapeutic journaling assistant helping someone continue their journaling practice.
 
-Based on these recent journal entries, suggest 2-3 thoughtful reflection prompts for today's journaling session. The prompts should help the user continue their self-reflection journey, identify patterns, and build on their previous thoughts.
+Here are their last ${previousEntries.length} journal ${previousEntries.length === 1 ? 'entry' : 'entries'}:
 
-Recent entries:
-"""
 ${entriesSummary}
-"""
 
-Return only the prompts, one per line, without numbering or bullets.`;
+Generate 2-3 personalized reflection prompts for today. IMPORTANT:
+- Reference SPECIFIC things they mentioned (names, events, feelings, situations, goals, relationships)
+- Ask follow-up questions about unresolved thoughts or emotions from their entries
+- Help them explore patterns or continue threads from what they wrote
+- Be warm and curious, not generic
+
+Examples of good specific prompts:
+- "You mentioned feeling conflicted about [specific thing]. How has that been sitting with you?"
+- "Last time you wrote about [person/situation]. Any new thoughts on that?"
+- "You seemed to be working through [specific emotion/decision]. Where are you with that now?"
+
+Return only the prompts, one per line, without numbering or bullets. Make each prompt specific to THEIR journal content.`;
   } else {
     prompt = `You are a thoughtful, therapeutic journaling assistant. The user is starting fresh with no previous journal entries. Suggest 2-3 gentle, open-ended prompts to help them begin their journaling journey today. Focus on present feelings, gratitude, or simple observations.
 

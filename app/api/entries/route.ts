@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stackServerApp } from "@/lib/stack";
 import { createServerSupabaseClient } from "@/lib/supabase";
-import { generateEntrySummary } from "@/lib/gemini";
+import { generateEntrySummary, generateChatTitle } from "@/lib/gemini";
 
 // GET /api/entries - Get all entries for the current user
 export async function GET(request: NextRequest) {
@@ -66,13 +66,24 @@ export async function POST(request: NextRequest) {
       console.error("Failed to generate summary:", e);
     }
 
+    // Auto-generate title for chat entries
+    let finalTitle = title;
+    if (entry_type === "chat" && chat_history && (!title || title === "Chat Conversation")) {
+      try {
+        finalTitle = await generateChatTitle(chat_history);
+      } catch (e) {
+        console.error("Failed to generate chat title:", e);
+        finalTitle = "Chat Conversation";
+      }
+    }
+
     const supabase = createServerSupabaseClient();
 
     const { data: entry, error } = await supabase
       .from("journal_entries")
       .insert({
         user_id: user.id,
-        title: title || null,
+        title: finalTitle || null,
         content,
         mood: mood || null,
         summary,

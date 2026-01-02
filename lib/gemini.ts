@@ -90,6 +90,32 @@ ${content.slice(0, 1000)}`;
   return response.text().trim();
 }
 
+export async function generateChatTitle(messages: { role: string; content: string }[]): Promise<string> {
+  const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+
+  const conversation = messages
+    .slice(0, 6) // Use first few messages to get the gist
+    .map((m) => `${m.role === "user" ? "User" : "AI"}: ${m.content.slice(0, 300)}`)
+    .join("\n");
+
+  const prompt = `Generate a short, descriptive title (3-6 words) for this journal chat conversation. The title should capture the main topic or theme discussed. Be specific, not generic.
+
+Examples of good titles:
+- "Reflecting on Career Doubts"
+- "Processing the Breakup"
+- "Finding Peace with Family"
+- "Exploring Creative Block"
+
+Conversation:
+${conversation}
+
+Return ONLY the title, nothing else. No quotes, no punctuation at the end.`;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  return response.text().trim().replace(/^["']|["']$/g, ''); // Remove any quotes
+}
+
 export async function chatWithEntriesStream(
   userMessage: string,
   entries: { content: string; created_at: string; title?: string; mood?: string }[],

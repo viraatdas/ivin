@@ -17,6 +17,8 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
 
   // Redirect if not logged in
   useEffect(() => {
@@ -102,6 +104,49 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
     }
   };
 
+  const handleTitleEdit = () => {
+    setEditedTitle(entry?.title || "");
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleSave = async () => {
+    if (!entry || !editedTitle.trim()) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch("/api/entries", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: entry.id,
+          title: editedTitle.trim(),
+          content: entry.content,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setEntry(result.entry);
+        setIsEditingTitle(false);
+        setSaveStatus("saved");
+        setTimeout(() => setSaveStatus("idle"), 2000);
+      }
+    } catch (err) {
+      console.error("Failed to save title:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTitleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleTitleSave();
+    } else if (e.key === "Escape") {
+      setIsEditingTitle(false);
+    }
+  };
+
   if (user === null) {
     return null;
   }
@@ -177,12 +222,52 @@ export default function EntryPage({ params }: { params: Promise<{ id: string }> 
 
             <div className="mb-6">
               <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-2xl font-light tracking-tight">
-                  {entry.title || "Chat Conversation"}
-                </h1>
-                <span className="px-2 py-0.5 rounded-full text-xs font-light text-white bg-gray-800">
-                  💬 chat
-                </span>
+                {isEditingTitle ? (
+                  <div className="flex items-center gap-2 flex-1">
+                    <input
+                      type="text"
+                      value={editedTitle}
+                      onChange={(e) => setEditedTitle(e.target.value)}
+                      onKeyDown={handleTitleKeyDown}
+                      className="text-2xl font-light tracking-tight bg-gray-50 border border-gray-200 rounded-lg px-3 py-1 flex-1 focus:outline-none focus:border-gray-400"
+                      autoFocus
+                    />
+                    <button
+                      onClick={handleTitleSave}
+                      disabled={isSaving}
+                      className="px-3 py-1 bg-black text-white text-sm font-light rounded-lg hover:bg-gray-800 disabled:opacity-50"
+                    >
+                      {isSaving ? "..." : "save"}
+                    </button>
+                    <button
+                      onClick={() => setIsEditingTitle(false)}
+                      className="px-3 py-1 text-sm font-light text-gray-500 hover:text-black"
+                    >
+                      cancel
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <h1 className="text-2xl font-light tracking-tight">
+                      {entry.title || "Chat Conversation"}
+                    </h1>
+                    <button
+                      onClick={handleTitleEdit}
+                      className="text-gray-400 hover:text-gray-600 transition-colors"
+                      title="Edit title"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                    <span className="px-2 py-0.5 rounded-full text-xs font-light text-white bg-gray-800">
+                      💬 chat
+                    </span>
+                    {saveStatus === "saved" && (
+                      <span className="text-xs font-light text-green-600">✓ saved</span>
+                    )}
+                  </>
+                )}
               </div>
               <p className="text-xs font-light text-gray-400">
                 {entryDate}
